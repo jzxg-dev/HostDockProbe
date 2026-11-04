@@ -4,7 +4,7 @@ A small, read-only metrics probe for [HostDock](https://hostdock.dev). It runs o
 
 The probe is open source so you can check what runs on your server. It **cannot run commands, change files or update itself**, does not listen on any port, does not need root, and talks to one fixed address. See [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md) for each claim and how to verify it.
 
-> **Status:** early. 0.1.0 is the first release; see [CHANGELOG.md](CHANGELOG.md).
+> **Status:** early. 0.1.1 is the first release; see [CHANGELOG.md](CHANGELOG.md).
 
 ## What it collects
 
