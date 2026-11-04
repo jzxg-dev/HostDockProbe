@@ -29,7 +29,7 @@ cargo fmt --check
 docker run --rm -v "$PWD":/src -w /src -e CARGO_TARGET_DIR=/src/target/linux rust:1-slim cargo run -q -- once
 ```
 
-开发时把上报地址指到本机的探针服务:编译时设 `HOSTDOCK_PROBE_ENDPOINT=http://127.0.0.1:18475`。
+开发时把上报地址指到本机的探针服务:编译时设 `HOSTDOCK_PROBE_ENDPOINT=http://127.0.0.1:18477`(`make run-test` 起的探针服务;Docker 里用 `http://host.docker.internal:18477`)。
 
 ## 结构
 
