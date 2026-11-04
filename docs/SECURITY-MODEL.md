@@ -44,7 +44,13 @@ The unit in [`dist/hostdock-probe.service`](../dist/hostdock-probe.service) runs
 
 ## Verifying a download
 
-Not available yet: no releases have been published. The plan is for release binaries to be built by GitHub Actions from the tagged source, never on a developer's machine, with a `SHA256SUMS` file, a minisign signature and a GitHub artifact attestation linking each binary to the workflow run and commit. Until then, build from source.
+Release binaries are built by GitHub Actions from the tagged source ([`.github/workflows/release.yml`](../.github/workflows/release.yml)), never on a developer's machine. Each release has a `SHA256SUMS` file and a GitHub build provenance attestation that ties every file to the workflow run and the commit it was built from:
+
+```
+gh attestation verify hostdock-probe-x86_64-linux -R XiangongCloud/HostDockProbe
+```
+
+The install script refuses to install a binary whose SHA-256 does not match `SHA256SUMS`. No release has been published yet; until then, build from source.
 
 ## Reporting a vulnerability
 

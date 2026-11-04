@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# OpenRC service for hostdock-probe (Alpine and other OpenRC systems).
+name="hostdock-probe"
+description="HostDock probe (read-only metrics)"
+supervisor="supervise-daemon"
+command="/usr/local/bin/hostdock-probe"
+command_args="run --config /etc/hostdock-probe/config.toml"
+command_user="hostdock-probe:hostdock-probe"
+respawn_delay=10
+output_log="/var/log/hostdock-probe.log"
+error_log="/var/log/hostdock-probe.log"
+
+depend() {
+	need net
+}
+
+start_pre() {
+	checkpath -f -m 0640 -o hostdock-probe:hostdock-probe /var/log/hostdock-probe.log
+}

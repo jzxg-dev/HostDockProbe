@@ -5,7 +5,7 @@ members = ["crates/probe"]
 [workspace.package]
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/hostdock/hostdock-probe"
+repository = "https://github.com/XiangongCloud/HostDockProbe"
 
 [profile.release]
 opt-level = "s"

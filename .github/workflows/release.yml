@@ -1,0 +1,70 @@
+name: Release
+
+# Push a tag like v0.1.0. Binaries are built here, from the tagged source, never on
+# a developer's machine. Each release carries SHA256SUMS and a build provenance
+# attestation: `gh attestation verify hostdock-probe-x86_64-linux -R XiangongCloud/HostDockProbe`.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.arch }}-unknown-linux-musl
+      - name: The tag matches the version in Cargo.toml
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: Install cargo-zigbuild
+        run: pip install ziglang==0.13.0 cargo-zigbuild==0.19.8
+      - name: Build
+        env:
+          HOSTDOCK_PROBE_COMMIT: ${{ github.sha }}
+        run: |
+          cargo zigbuild --release --locked --target ${{ matrix.arch }}-unknown-linux-musl
+          mkdir out
+          cp target/${{ matrix.arch }}-unknown-linux-musl/release/hostdock-probe out/hostdock-probe-${{ matrix.arch }}-linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hostdock-probe-${{ matrix.arch }}
+          path: out/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cp dist/install.sh dist/uninstall.sh out/
+          cd out
+          sha256sum hostdock-probe-* install.sh uninstall.sh > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: out/*
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/* --title "$GITHUB_REF_NAME" \
+            --notes "See [CHANGELOG.md](https://github.com/XiangongCloud/HostDockProbe/blob/main/CHANGELOG.md)."

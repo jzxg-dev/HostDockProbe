@@ -4,7 +4,7 @@ A small, read-only metrics probe for [HostDock](https://hostdock.dev). It runs o
 
 The probe is open source so you can check what runs on your server. It **cannot run commands, change files or update itself**, does not listen on any port, does not need root, and talks to one fixed address. See [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md) for each claim and how to verify it.
 
-> **Status:** in development. There are no releases yet, and the probe service it reports to is not running yet.
+> **Status:** in development. No release has been published yet, and the probe service it reports to is not running yet.
 
 ## What it collects
 
@@ -25,6 +25,25 @@ It does **not** collect process names or command lines, environment variables, u
 
 - Linux on x86_64 or aarch64 (kernel 3.10 or later)
 - Outbound HTTPS to `probe.hostdock.dev`
+
+## Install
+
+Once the first release is published, on the server (as root):
+
+```
+curl -fsSL https://github.com/XiangongCloud/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
+```
+
+The token comes from "Add probe" in the HostDock app. Prefer to read the script first? Download [`install.sh`](dist/install.sh), read it, then run `sudo sh install.sh --token hdp_...`. It:
+
+1. downloads the binary for your CPU from the GitHub release and checks it against `SHA256SUMS`
+2. creates the unprivileged system user `hostdock-probe`
+3. installs `/usr/local/bin/hostdock-probe` and writes `/etc/hostdock-probe/config.toml` (mode 600)
+4. installs and starts a hardened systemd unit ([`dist/hostdock-probe.service`](dist/hostdock-probe.service)) or, on Alpine, an OpenRC service
+
+Running it again upgrades the binary and keeps the config. [`uninstall.sh`](dist/uninstall.sh) removes everything, including the user.
+
+Tested on Debian 12, Ubuntu 24.04, Rocky Linux 9 and Alpine 3.20.
 
 ## Usage
 
