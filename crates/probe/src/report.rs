@@ -128,9 +128,11 @@ pub enum Outcome {
     Unauthorized,
     /// 429: slow down, optionally for this many seconds.
     RateLimited(Option<u64>),
-    /// Another 4xx: the report itself was refused; do not send it again.
+    /// 400, 413 or 422: the report itself was refused; do not send it again.
     Rejected(u16),
-    /// 5xx or a network error: try again later.
+    /// Anything else (5xx, 3xx, 403, 404, a network error): keep the minutes
+    /// and try again later. A 403 or 404 usually means something in front of
+    /// the service is misconfigured, not that the report is bad.
     Failed(String),
 }
 
@@ -145,7 +147,7 @@ pub fn classify(status: u16, retry_after: Option<&str>, body: &str) -> Outcome {
         }
         401 => Outcome::Unauthorized,
         429 => Outcome::RateLimited(retry_after.and_then(|v| v.trim().parse().ok())),
-        400..=499 => Outcome::Rejected(status),
+        400 | 413 | 422 => Outcome::Rejected(status),
         _ => Outcome::Failed(format!("HTTP {status}")),
     }
 }
@@ -167,6 +169,9 @@ impl Client {
         let agent: ureq::Agent = ureq::Agent::config_builder()
             .timeout_global(Some(TIMEOUT))
             .http_status_as_error(false)
+            // The probe talks to ENDPOINT and nowhere else: a redirect is not
+            // followed (it comes back as a 3xx and is retried like a 5xx).
+            .max_redirects(0)
             .user_agent(format!("hostdock-probe/{VERSION}"))
             .build()
             .into();
@@ -256,8 +261,16 @@ mod tests {
             Outcome::RateLimited(Some(120))
         );
         assert_eq!(classify(429, None, ""), Outcome::RateLimited(None));
+        assert_eq!(classify(400, None, ""), Outcome::Rejected(400));
         assert_eq!(classify(413, None, ""), Outcome::Rejected(413));
         assert!(matches!(classify(503, None, ""), Outcome::Failed(_)));
+        // A CDN challenge, a wrong path or a redirect: keep the data and retry.
+        for status in [301, 307, 308, 403, 404, 405] {
+            assert!(
+                matches!(classify(status, None, ""), Outcome::Failed(_)),
+                "{status}"
+            );
+        }
     }
 
     #[test]

@@ -10,7 +10,7 @@
 | It cannot change files on your server | It never opens a file for writing. The systemd unit additionally mounts the whole file system read-only for it (`ProtectSystem=strict`) | Search for `File::create`, `OpenOptions`, `fs::write`: there are none |
 | It cannot update itself | There is no update code. Upgrading means installing the new version yourself | Search for any download or exec code: there is none |
 | It does not listen on any port | It only makes outbound HTTPS requests | `ss -ltnp` shows nothing for `hostdock-probe` |
-| It only talks to one address | `https://probe.hostdock.dev`, fixed at build time; there is no config option to change it | `ENDPOINT` in `crates/probe/src/report.rs` |
+| It only talks to one address | `https://probe.hostdock.dev`, fixed at build time; there is no config option to change it, and redirects are not followed | `ENDPOINT` and `max_redirects(0)` in `crates/probe/src/report.rs` |
 | It does not need root | It runs as the unprivileged `hostdock-probe` user with no capabilities | `ps -o user= -C hostdock-probe` |
 | It has no unsafe code | `#![forbid(unsafe_code)]` | `crates/probe/src/main.rs`, first line |
 
@@ -36,7 +36,7 @@ Everything in a report, as described in [PROTOCOL.md](PROTOCOL.md), stored unenc
 
 ## The token
 
-The token in `/etc/hostdock-probe/config.toml` (readable only by the `hostdock-probe` user and root) lets whoever has it send reports for that one probe. It cannot be used to read data or to reach your HostDock account. It is never written to logs. If it leaks, rotate it in the HostDock app; the old one stops working immediately.
+The token in `/etc/hostdock-probe/config.toml` (owned by root, readable only by root and the `hostdock-probe` group, so the probe can read it but not change it) lets whoever has it send reports for that one probe. It cannot be used to read data or to reach your HostDock account. It is never written to logs. If it leaks, rotate it in the HostDock app; the old one stops working immediately.
 
 ## Hardening under systemd
 

@@ -37,7 +37,7 @@ if id "$NAME" >/dev/null 2>&1; then
     deluser "$NAME" >/dev/null 2>&1 || true
   fi
 fi
-if command -v getent >/dev/null 2>&1 && getent group "$NAME" >/dev/null 2>&1; then
+if grep -q "^$NAME:" /etc/group 2>/dev/null; then
   if command -v groupdel >/dev/null 2>&1; then
     groupdel "$NAME" >/dev/null 2>&1 || true
   elif command -v delgroup >/dev/null 2>&1; then

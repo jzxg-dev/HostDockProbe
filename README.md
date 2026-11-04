@@ -31,14 +31,14 @@ It does **not** collect process names or command lines, environment variables, u
 Once the first release is published, on the server (as root):
 
 ```
-curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
+curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh
 ```
 
-The token comes from "Add probe" in the HostDock app. Prefer to read the script first? Download [`install.sh`](dist/install.sh), read it, then run `sudo sh install.sh --token hdp_...`. It:
+It asks for the token from "Add probe" in the HostDock app (input hidden), so the token stays out of your shell history and the process list. `--token hdp_...` also works but leaves the token in your history; `--token-stdin` reads it from standard input when you run a downloaded copy. Prefer to read the script first? Download [`install.sh`](dist/install.sh), read it, then run `sudo sh install.sh`. It:
 
 1. downloads the binary for your CPU from the GitHub release and checks it against `SHA256SUMS`
-2. creates the unprivileged system user `hostdock-probe`
-3. installs `/usr/local/bin/hostdock-probe` and writes `/etc/hostdock-probe/config.toml` (mode 600)
+2. creates the unprivileged system user and group `hostdock-probe`
+3. installs `/usr/local/bin/hostdock-probe` and writes `/etc/hostdock-probe/config.toml`, owned by root and readable only by the `hostdock-probe` group (mode 640), so the probe cannot change its own config
 4. installs and starts a hardened systemd unit ([`dist/hostdock-probe.service`](dist/hostdock-probe.service)) or, on Alpine, an OpenRC service
 
 Running it again upgrades the binary and keeps the config. [`uninstall.sh`](dist/uninstall.sh) removes everything, including the user.

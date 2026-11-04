@@ -140,8 +140,10 @@ Other statuses:
 |---|---|
 | `401` | The token is invalid (deleted probe, rotated token). Logs an error, keeps sampling, retries once an hour |
 | `429` | Waits `Retry-After` seconds (clamped to 5–600), or backs off |
-| other `4xx` | The report itself was rejected. Logs it and drops those minutes, so one bad report cannot block the queue |
-| `5xx`, network error | Keeps the minutes and retries after 1, 2, 5, 10, then every 30 seconds |
+| `400`, `413`, `422` | The report itself was rejected. Logs it and drops those minutes, so one bad report cannot block the queue |
+| anything else (`5xx`, `3xx`, `403`, `404`, …), network error | Keeps the minutes and retries after 1, 2, 5, 10, then every 30 seconds |
+
+Redirects are never followed: the probe only talks to the address built into it, and a `3xx` is treated like a `5xx`.
 
 ## `GET /v1/check`
 

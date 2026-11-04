@@ -1,20 +1,25 @@
 #!/bin/sh
 # Install or upgrade hostdock-probe. https://github.com/jzxg-dev/HostDockProbe
 #
-#   curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
+#   curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh
 #
-# Or download it, read it, then run: sudo sh install.sh --token hdp_...
+# It asks for the token (input hidden), so the token stays out of your shell
+# history and the process list. Or download it, read it, then run: sudo sh install.sh
 # Running it again upgrades the binary and keeps the existing config.
 #
 # What it does, and nothing else:
 #   1. downloads the binary for this CPU from GitHub Releases and checks its SHA-256
 #   2. creates the unprivileged system user "hostdock-probe"
 #   3. installs /usr/local/bin/hostdock-probe
-#   4. writes /etc/hostdock-probe/config.toml (readable only by that user)
+#   4. writes /etc/hostdock-probe/config.toml (owned by root, readable by that user's group only)
 #   5. installs and starts a systemd unit or an OpenRC service
 #
 # Options:
-#   --token TOKEN     the token from "Add probe" in the HostDock app (also HOSTDOCK_PROBE_TOKEN)
+#   (none)            ask for the token on the terminal (only on a first install)
+#   --token-stdin     read the token from the first line of standard input
+#                     (for a downloaded install.sh; not with curl | sh)
+#   --token TOKEN     pass the token directly (it ends up in your shell history)
+#   HOSTDOCK_PROBE_TOKEN=...  same, from the environment
 #   --version X.Y.Z   install this version instead of the latest
 #   --binary PATH     install this file instead of downloading (no checksum check)
 #   --no-start        install but do not start the service
@@ -31,6 +36,7 @@ CONF="$CONF_DIR/config.toml"
 USER_NAME="$NAME"
 
 TOKEN="${HOSTDOCK_PROBE_TOKEN:-}"
+TOKEN_STDIN=0
 VERSION=""
 LOCAL_BINARY=""
 START=1
@@ -41,10 +47,11 @@ fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --token) [ $# -ge 2 ] || fail "--token needs a value"; TOKEN="$2"; shift 2 ;;
+    --token-stdin) TOKEN_STDIN=1; shift ;;
     --version) [ $# -ge 2 ] || fail "--version needs a value"; VERSION="$2"; shift 2 ;;
     --binary) [ $# -ge 2 ] || fail "--binary needs a path"; LOCAL_BINARY="$2"; shift 2 ;;
     --no-start) START=0; shift ;;
-    -h|--help) sed -n '2,25p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,/^# Remove everything/p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) fail "unknown option: $1" ;;
   esac
 done
@@ -59,6 +66,19 @@ case "$(uname -m)" in
 esac
 
 # The token: hdp_ followed by letters and digits. Never printed.
+if [ "$TOKEN_STDIN" = 1 ]; then
+  IFS= read -r TOKEN || [ -n "$TOKEN" ] || fail "--token-stdin: nothing on standard input"
+elif [ -z "$TOKEN" ] && [ ! -f "$CONF" ] && (: </dev/tty) 2>/dev/null; then
+  # stdin is this script when piped from curl, so ask on the terminal instead.
+  printf 'Paste the token from "Add probe" in the HostDock app (input hidden): ' >/dev/tty
+  trap 'stty echo </dev/tty 2>/dev/null; exit 130' INT TERM
+  stty -echo </dev/tty 2>/dev/null || true
+  IFS= read -r TOKEN </dev/tty || TOKEN=""
+  stty echo </dev/tty 2>/dev/null || true
+  trap - INT TERM
+  printf '\n' >/dev/tty
+fi
+TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
 if [ -n "$TOKEN" ]; then
   case "$TOKEN" in
     hdp_*) ;;
@@ -68,7 +88,7 @@ if [ -n "$TOKEN" ]; then
     *[!A-Za-z0-9]*|'') fail "the token contains unexpected characters; copy it again from the HostDock app" ;;
   esac
 elif [ ! -f "$CONF" ]; then
-  fail "no token: pass --token hdp_... (from \"Add probe\" in the HostDock app)"
+  fail "no token: run this on a terminal to be asked for it, or use --token-stdin (the token is in \"Add probe\" in the HostDock app)"
 fi
 
 TMP="$(mktemp -d)"
@@ -117,11 +137,12 @@ fi
 chmod 0755 "$TMP/$NAME"
 "$TMP/$NAME" version >/dev/null 2>&1 || fail "the downloaded binary does not run on this server"
 
-# 2. The user.
+# 2. The user, and a group of the same name (it is what may read the config).
 if ! id "$USER_NAME" >/dev/null 2>&1; then
   if command -v useradd >/dev/null 2>&1; then
     NOLOGIN="$(command -v nologin || echo /bin/false)"
-    useradd --system --no-create-home --home-dir / --shell "$NOLOGIN" "$USER_NAME"
+    grep -q "^$USER_NAME:" /etc/group || groupadd --system "$USER_NAME"
+    useradd --system --no-create-home --home-dir / --shell "$NOLOGIN" -g "$USER_NAME" "$USER_NAME"
   elif command -v adduser >/dev/null 2>&1; then
     # BusyBox (Alpine): adduser -S does not create a group of the same name.
     addgroup -S "$USER_NAME" 2>/dev/null || true
@@ -137,20 +158,29 @@ install -m 0755 "$TMP/$NAME" "$BIN.new" 2>/dev/null || { cp "$TMP/$NAME" "$BIN.n
 mv -f "$BIN.new" "$BIN"
 say "Installed $("$BIN" version | head -n 1)."
 
-# 4. The config. Kept on upgrade unless a new token is given.
+# 4. The config. Kept on upgrade unless a new token is given. The directory and
+# the file belong to root and the probe's group may only read them, so the probe
+# cannot change its own config.
 mkdir -p "$CONF_DIR"
+chown root:"$USER_NAME" "$CONF_DIR"
+chmod 0750 "$CONF_DIR"
+[ ! -L "$CONF" ] || fail "$CONF is a symbolic link; remove it and run this again"
 if [ -n "$TOKEN" ]; then
-  if [ -f "$CONF" ]; then
-    grep -v '^[[:space:]]*token[[:space:]]*=' "$CONF" > "$TMP/config.rest" || true
-  else
-    : > "$TMP/config.rest"
-  fi
-  { printf 'token = "%s"\n' "$TOKEN"; cat "$TMP/config.rest"; } > "$TMP/config.toml"
-  cp "$TMP/config.toml" "$CONF"
+  (
+    umask 077
+    if [ -f "$CONF" ]; then
+      grep -v '^[[:space:]]*token[[:space:]]*=' "$CONF" > "$TMP/config.rest" || true
+    else
+      : > "$TMP/config.rest"
+    fi
+    { printf 'token = "%s"\n' "$TOKEN"; cat "$TMP/config.rest"; } > "$TMP/config.toml"
+  )
+  chown root:"$USER_NAME" "$TMP/config.toml"
+  chmod 0640 "$TMP/config.toml"
+  mv -f "$TMP/config.toml" "$CONF"
 fi
-chown -R "$USER_NAME:" "$CONF_DIR" 2>/dev/null || chown -R "$USER_NAME" "$CONF_DIR"
-chmod 0700 "$CONF_DIR"
-chmod 0600 "$CONF"
+chown root:"$USER_NAME" "$CONF"
+chmod 0640 "$CONF"
 
 # 5. The service.
 if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
