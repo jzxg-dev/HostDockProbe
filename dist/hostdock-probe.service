@@ -1,0 +1,46 @@
+# systemd unit for hostdock-probe. See docs/SECURITY-MODEL.md.
+[Unit]
+Description=HostDock probe (read-only metrics)
+Documentation=https://github.com/hostdock/hostdock-probe
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hostdock-probe
+Group=hostdock-probe
+ExecStart=/usr/local/bin/hostdock-probe run --config /etc/hostdock-probe/config.toml
+Restart=always
+RestartSec=10
+
+# The probe needs nothing beyond reading /proc, /sys and statvfs.
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+# read-only, not yes: the size of a separate /home partition must stay readable.
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+# Not set on purpose: ProtectProc=invisible and ProcSubset=pid would hide
+# the /proc entries the probe counts and reads.
+MemoryMax=32M
+CPUQuota=5%
+
+[Install]
+WantedBy=multi-user.target
