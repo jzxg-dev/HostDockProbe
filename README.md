@@ -31,7 +31,7 @@ It does **not** collect process names or command lines, environment variables, u
 Once the first release is published, on the server (as root):
 
 ```
-curl -fsSL https://github.com/XiangongCloud/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
+curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
 ```
 
 The token comes from "Add probe" in the HostDock app. Prefer to read the script first? Download [`install.sh`](dist/install.sh), read it, then run `sudo sh install.sh --token hdp_...`. It:

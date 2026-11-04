@@ -1,7 +1,7 @@
 #!/bin/sh
-# Install or upgrade hostdock-probe. https://github.com/XiangongCloud/HostDockProbe
+# Install or upgrade hostdock-probe. https://github.com/jzxg-dev/HostDockProbe
 #
-#   curl -fsSL https://github.com/XiangongCloud/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
+#   curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh -s -- --token hdp_...
 #
 # Or download it, read it, then run: sudo sh install.sh --token hdp_...
 # Running it again upgrades the binary and keeps the existing config.
@@ -23,7 +23,7 @@
 
 set -eu
 
-REPO="https://github.com/XiangongCloud/HostDockProbe"
+REPO="https://github.com/jzxg-dev/HostDockProbe"
 NAME="hostdock-probe"
 BIN="/usr/local/bin/$NAME"
 CONF_DIR="/etc/$NAME"
@@ -158,7 +158,7 @@ if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
 # systemd unit for hostdock-probe. See docs/SECURITY-MODEL.md.
 [Unit]
 Description=HostDock probe (read-only metrics)
-Documentation=https://github.com/XiangongCloud/HostDockProbe
+Documentation=https://github.com/jzxg-dev/HostDockProbe
 After=network-online.target
 Wants=network-online.target
 

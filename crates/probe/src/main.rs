@@ -33,7 +33,7 @@ Options:
                     or HOSTDOCK_PROBE_CONFIG)
 
 The token can also be given in HOSTDOCK_PROBE_TOKEN.
-Source and documentation: https://github.com/XiangongCloud/HostDockProbe";
+Source and documentation: https://github.com/jzxg-dev/HostDockProbe";
 
 fn config_path(args: &[String]) -> Result<String, String> {
     let mut path = std::env::var("HOSTDOCK_PROBE_CONFIG")

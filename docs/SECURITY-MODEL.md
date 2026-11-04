@@ -47,7 +47,7 @@ The unit in [`dist/hostdock-probe.service`](../dist/hostdock-probe.service) runs
 Release binaries are built by GitHub Actions from the tagged source ([`.github/workflows/release.yml`](../.github/workflows/release.yml)), never on a developer's machine. Each release has a `SHA256SUMS` file and a GitHub build provenance attestation that ties every file to the workflow run and the commit it was built from:
 
 ```
-gh attestation verify hostdock-probe-x86_64-linux -R XiangongCloud/HostDockProbe
+gh attestation verify hostdock-probe-x86_64-linux -R jzxg-dev/HostDockProbe
 ```
 
 The install script refuses to install a binary whose SHA-256 does not match `SHA256SUMS`. No release has been published yet; until then, build from source.

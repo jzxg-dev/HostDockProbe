@@ -2,7 +2,7 @@ name: Release
 
 # Push a tag like v0.1.0. Binaries are built here, from the tagged source, never on
 # a developer's machine. Each release carries SHA256SUMS and a build provenance
-# attestation: `gh attestation verify hostdock-probe-x86_64-linux -R XiangongCloud/HostDockProbe`.
+# attestation: `gh attestation verify hostdock-probe-x86_64-linux -R jzxg-dev/HostDockProbe`.
 
 on:
   push:
@@ -67,4 +67,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" out/* --title "$GITHUB_REF_NAME" \
-            --notes "See [CHANGELOG.md](https://github.com/XiangongCloud/HostDockProbe/blob/main/CHANGELOG.md)."
+            --notes "See [CHANGELOG.md](https://github.com/jzxg-dev/HostDockProbe/blob/main/CHANGELOG.md)."

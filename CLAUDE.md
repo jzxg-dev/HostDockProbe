@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-HostDock 探针的开源仓库(2026-11-03 建,GitHub 上是 https://github.com/XiangongCloud/HostDockProbe)。探针是装在用户 Linux 服务器上的一个小程序,定时把 CPU、内存、磁盘、网络这些数报给 HostDock 的探针服务;用户在 HostDock 应用里看实时数据、历史曲线,收告警邮件。
+HostDock 探针的开源仓库(2026-11-03 建,GitHub 上是 https://github.com/jzxg-dev/HostDockProbe)。探针是装在用户 Linux 服务器上的一个小程序,定时把 CPU、内存、磁盘、网络这些数报给 HostDock 的探针服务;用户在 HostDock 应用里看实时数据、历史曲线,收告警邮件。
 
 **探针和 HostDock 应用里现有的"监控"(打开服务器时通过 SSH 采集,`../HostDock/crates/hostdock-core/src/monitor.rs`)是两个不相干的功能**(用户 2026-11-03 定):不共用代码,不互相替代,界面上也不合在一起。
 

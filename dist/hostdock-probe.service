@@ -1,7 +1,7 @@
 # systemd unit for hostdock-probe. See docs/SECURITY-MODEL.md.
 [Unit]
 Description=HostDock probe (read-only metrics)
-Documentation=https://github.com/XiangongCloud/HostDockProbe
+Documentation=https://github.com/jzxg-dev/HostDockProbe
 After=network-online.target
 Wants=network-online.target
 

@@ -1,8 +1,8 @@
 #!/bin/sh
 # Remove hostdock-probe completely: the service, the binary, the config, the log
-# and the system user. https://github.com/XiangongCloud/HostDockProbe
+# and the system user. https://github.com/jzxg-dev/HostDockProbe
 #
-#   curl -fsSL https://github.com/XiangongCloud/HostDockProbe/releases/latest/download/uninstall.sh | sudo sh
+#   curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/uninstall.sh | sudo sh
 #
 # The probe's history stays in HostDock until you delete the probe in the app.
 
