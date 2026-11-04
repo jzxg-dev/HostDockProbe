@@ -4,7 +4,7 @@ A small, read-only metrics probe for [HostDock](https://hostdock.dev). It runs o
 
 The probe is open source so you can check what runs on your server. It **cannot run commands, change files or update itself**, does not listen on any port, does not need root, and talks to one fixed address. See [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md) for each claim and how to verify it.
 
-> **Status:** in development. No release has been published yet, and the probe service it reports to is not running yet.
+> **Status:** early. 0.1.0 is the first release; see [CHANGELOG.md](CHANGELOG.md).
 
 ## What it collects
 
@@ -28,7 +28,7 @@ It does **not** collect process names or command lines, environment variables, u
 
 ## Install
 
-Once the first release is published, on the server (as root):
+On the server (as root):
 
 ```
 curl -fsSL https://github.com/jzxg-dev/HostDockProbe/releases/latest/download/install.sh | sudo sh

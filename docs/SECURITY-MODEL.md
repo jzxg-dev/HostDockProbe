@@ -50,7 +50,7 @@ Release binaries are built by GitHub Actions from the tagged source ([`.github/w
 gh attestation verify hostdock-probe-x86_64-linux -R jzxg-dev/HostDockProbe
 ```
 
-The install script refuses to install a binary whose SHA-256 does not match `SHA256SUMS`. No release has been published yet; until then, build from source.
+The install script refuses to install a binary whose SHA-256 does not match `SHA256SUMS`. To check by hand, download the binary and `SHA256SUMS` from the same release and run `sha256sum -c SHA256SUMS --ignore-missing`.
 
 ## Reporting a vulnerability
 
