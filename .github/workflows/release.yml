@@ -26,8 +26,10 @@ jobs:
         run: |
           version=$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')
           test "v$version" = "$GITHUB_REF_NAME"
+      # zig 0.13 does not know the --fix-cortex-a53-843419 linker flag that newer
+      # Rust passes for aarch64; these versions do.
       - name: Install cargo-zigbuild
-        run: pip install ziglang==0.13.0 cargo-zigbuild==0.19.8
+        run: pip install ziglang==0.17.0 cargo-zigbuild==0.24.1
       - name: Build
         env:
           HOSTDOCK_PROBE_COMMIT: ${{ github.sha }}

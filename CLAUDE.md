@@ -39,6 +39,6 @@ docker run --rm -v "$PWD":/src -w /src -e CARGO_TARGET_DIR=/src/target/linux rus
 - `crates/probe/src/run.rs`:常驻运行。三个线程:采样(主线程)、磁盘空间(每 30 秒,每个挂载点的 `statvfs` 单独一个线程、2 秒超时)、上报。
 - `crates/probe/fixtures/`:真机器上截下来的 `/proc` 文件,以及手写的边界情况(没有 MemAvailable 的老内核、OpenVZ 的 venet0 等)。
 - `dist/`:`install.sh`、`uninstall.sh`(纯 POSIX sh,BusyBox 也要能跑)、systemd 单元、OpenRC 脚本。`install.sh` 里各带一份单元和 OpenRC 脚本(一个文件就能装),改了 `dist/` 里的要同步改它:`sh dist/check-embedded.sh` 会检查,CI 也跑。
-- `.github/workflows/`:`ci.yml`(fmt、clippy、测试、shellcheck、`cargo deny`)、`release.yml`(推 `v*` 标签时用 cargo-zigbuild 编两种 CPU、写 `SHA256SUMS`、记构建来源证明、发 Release)。发版:改 `Cargo.toml` 的版本和 `CHANGELOG.md`,打标签推上去。`deny.toml` 里禁了 OpenSSL 和 tokio。
+- `.github/workflows/`:`ci.yml`(fmt、clippy、测试、shellcheck、`cargo deny`,外加和发版一样的两种静态编译,工具链出问题在打标签之前就看得到)、`release.yml`(推 `v*` 标签时用 cargo-zigbuild 编两种 CPU、写 `SHA256SUMS`、记构建来源证明、发 Release)。发版:改 `Cargo.toml` 的版本和 `CHANGELOG.md`,推上去等 CI 全过,再打标签推上去。zig 和 cargo-zigbuild 的版本两个 workflow 里各写了一份,改要一起改(2026-11-04 因为 zig 0.13 不认新版 Rust 给 aarch64 加的链接参数,升到了 zig 0.17.0、cargo-zigbuild 0.24.1)。`deny.toml` 里禁了 OpenSSL 和 tokio。
 
 规划的全文(功能、阶段、探针服务的设计)在 `../HostDockServer/docs/DESIGN.md` 第 17 节;这个仓库里只放公开的部分。
