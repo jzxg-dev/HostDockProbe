@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 (unreleased)
+## 0.1.2 (2026-11-04)
 
 - `install.sh` asks for a token on an upgrade too: paste a new one to replace the old token, or press Enter to keep it. Changing the token no longer means editing the config by hand.
 - `install.sh` tells a rejected token apart from a probe service it cannot reach yet.
