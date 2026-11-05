@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3 (unreleased)
+## 0.1.3 (2026-11-05)
 
 - `install.sh` gives up on a download that cannot connect within 15 seconds, or stays under 1 KB/s for 30 seconds, instead of waiting for a long time. GNU wget tries 3 times instead of 20.
 - `install.sh` shows a progress bar while it downloads the probe (with curl).
