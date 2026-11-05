@@ -5,7 +5,8 @@
 #
 # It asks for the token (input hidden), so the token stays out of your shell
 # history and the process list. Or download it, read it, then run: sudo sh install.sh
-# Running it again upgrades the binary and keeps the existing config.
+# Running it again upgrades the binary. It asks again: paste a new token to
+# replace the old one, or press Enter to keep the existing config.
 #
 # What it does, and nothing else:
 #   1. downloads the binary for this CPU from GitHub Releases and checks its SHA-256
@@ -15,7 +16,8 @@
 #   5. installs and starts a systemd unit or an OpenRC service
 #
 # Options:
-#   (none)            ask for the token on the terminal (only on a first install)
+#   (none)            ask for the token on the terminal (on an upgrade, Enter
+#                     keeps the current one)
 #   --token-stdin     read the token from the first line of standard input
 #                     (for a downloaded install.sh; not with curl | sh)
 #   --token TOKEN     pass the token directly (it ends up in your shell history)
@@ -68,9 +70,13 @@ esac
 # The token: hdp_ followed by letters and digits. Never printed.
 if [ "$TOKEN_STDIN" = 1 ]; then
   IFS= read -r TOKEN || [ -n "$TOKEN" ] || fail "--token-stdin: nothing on standard input"
-elif [ -z "$TOKEN" ] && [ ! -f "$CONF" ] && (: </dev/tty) 2>/dev/null; then
+elif [ -z "$TOKEN" ] && (: </dev/tty) 2>/dev/null; then
   # stdin is this script when piped from curl, so ask on the terminal instead.
-  printf 'Paste the token from "Add probe" in the HostDock app (input hidden): ' >/dev/tty
+  if [ -f "$CONF" ]; then
+    printf 'Already installed. Paste a new token to replace the current one, or press Enter to keep it (input hidden): ' >/dev/tty
+  else
+    printf 'Paste the token from "Add probe" in the HostDock app (input hidden): ' >/dev/tty
+  fi
   trap 'stty echo </dev/tty 2>/dev/null; exit 130' INT TERM
   stty -echo </dev/tty 2>/dev/null || true
   IFS= read -r TOKEN </dev/tty || TOKEN=""
@@ -156,7 +162,8 @@ fi
 # 3. The binary goes in place; a running service keeps the old file until restarted.
 install -m 0755 "$TMP/$NAME" "$BIN.new" 2>/dev/null || { cp "$TMP/$NAME" "$BIN.new"; chmod 0755 "$BIN.new"; }
 mv -f "$BIN.new" "$BIN"
-say "Installed $("$BIN" version | head -n 1)."
+# sed reads all of it (head would close the pipe while the probe is still writing).
+say "Installed $("$BIN" version 2>/dev/null | sed -n 1p)."
 
 # 4. The config. Kept on upgrade unless a new token is given. The directory and
 # the file belong to root and the probe's group may only read them, so the probe
@@ -271,9 +278,15 @@ else
   say "  $BIN run --config $CONF"
 fi
 
-# Is the token accepted? Not fatal: the service keeps retrying.
-if "$BIN" check --config "$CONF" >/dev/null 2>&1; then
+# Is the token accepted? Not fatal: the service keeps retrying. The HostDock app
+# installs through SSH and reads these three sentences, so keep their beginnings.
+if CHECK="$("$BIN" check --config "$CONF" 2>&1)"; then
   say "The probe service accepted the token. The server shows up in HostDock within a few seconds."
 else
-  say "Could not confirm the token with the probe service yet. Check with: $BIN check --config $CONF"
+  case "$CHECK" in
+    *"token rejected"*)
+      say "The probe service rejected the token. Run this again on a terminal and paste a new token from the HostDock app." ;;
+    *)
+      say "Could not confirm the token with the probe service yet. Check with: $BIN check --config $CONF" ;;
+  esac
 fi

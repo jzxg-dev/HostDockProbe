@@ -41,7 +41,7 @@ It asks for the token from "Add probe" in the HostDock app (input hidden), so th
 3. installs `/usr/local/bin/hostdock-probe` and writes `/etc/hostdock-probe/config.toml`, owned by root and readable only by the `hostdock-probe` group (mode 640), so the probe cannot change its own config
 4. installs and starts a hardened systemd unit ([`dist/hostdock-probe.service`](dist/hostdock-probe.service)) or, on Alpine, an OpenRC service
 
-Running it again upgrades the binary and keeps the config. [`uninstall.sh`](dist/uninstall.sh) removes everything, including the user.
+Running it again upgrades the binary. It asks for a token again: paste a new one to replace the old token (after "New token" in the HostDock app, for example), or press Enter to keep the config as it is. [`uninstall.sh`](dist/uninstall.sh) removes everything, including the user.
 
 Tested on Debian 12, Ubuntu 24.04, Rocky Linux 9 and Alpine 3.20.
 

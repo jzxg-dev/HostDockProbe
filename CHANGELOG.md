@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (unreleased)
+
+- `install.sh` asks for a token on an upgrade too: paste a new one to replace the old token, or press Enter to keep it. Changing the token no longer means editing the config by hand.
+- `install.sh` tells a rejected token apart from a probe service it cannot reach yet.
+- `install.sh` no longer prints a "Broken pipe" panic while reading the installed version.
+
 ## 0.1.1 (2026-11-04)
 
 The first release. (0.1.0 was tagged, but its release build failed and nothing was published.)
