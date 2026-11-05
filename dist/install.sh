@@ -98,16 +98,41 @@ elif [ ! -f "$CONF" ]; then
 fi
 
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT INT TERM
+trap 'rm -rf "$TMP"' EXIT
+# Stop when asked to (Ctrl-C, or the HostDock app cancelling), and stop a download
+# that is under way too; the EXIT trap cleans up.
+CHILD=""
+trap 'if [ -n "$CHILD" ]; then kill "$CHILD" 2>/dev/null || true; fi; exit 1' INT TERM HUP
 
+# fetch URL FILE [progress]
+# A download gives up instead of hanging: 15 seconds to connect, and one that stays
+# under 1 KB/s for 30 seconds is stopped. With "progress", curl shows a progress
+# bar; the HostDock app reads its percentage when it runs this script over SSH.
+# It runs in the background: the shell runs a trap only after a foreground command
+# ends, but "wait" returns at once, so a signal stops a slow download right away.
 fetch() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 3 -o "$2" "$1"
+    if [ "${3:-}" = progress ]; then
+      curl -fL --progress-bar --connect-timeout 15 --speed-limit 1024 --speed-time 30 --retry 2 -o "$2" "$1" &
+    else
+      curl -fsSL --connect-timeout 15 --speed-limit 1024 --speed-time 30 --retry 2 -o "$2" "$1" &
+    fi
   elif command -v wget >/dev/null 2>&1; then
-    wget -q -O "$2" "$1"
+    # GNU wget tries 20 times by default; BusyBox wget has no --tries.
+    TRIES=""
+    if wget --help 2>&1 | grep -q -- --tries; then TRIES="-t 3"; fi
+    # shellcheck disable=SC2086
+    wget -q -T 30 $TRIES -O "$2" "$1" &
   else
     fail "neither curl nor wget is installed"
   fi
+  CHILD=$!
+  if wait "$CHILD"; then
+    CHILD=""
+    return 0
+  fi
+  CHILD=""
+  return 1
 }
 
 sha256() {
@@ -132,12 +157,13 @@ else
   fi
   FILE="$NAME-$ARCH-linux"
   say "Downloading $FILE ..."
-  fetch "$BASE/$FILE" "$TMP/$NAME" || fail "download failed: $BASE/$FILE"
+  fetch "$BASE/$FILE" "$TMP/$NAME" progress || fail "download failed: $BASE/$FILE"
   fetch "$BASE/SHA256SUMS" "$TMP/SHA256SUMS" || fail "download failed: $BASE/SHA256SUMS"
   WANT="$(grep " $FILE\$" "$TMP/SHA256SUMS" | cut -d' ' -f1)"
   [ -n "$WANT" ] || fail "$FILE is not listed in SHA256SUMS"
   GOT="$(sha256 "$TMP/$NAME")"
   [ "$WANT" = "$GOT" ] || fail "checksum mismatch for $FILE; not installing"
+  # The HostDock app takes this line as the end of the download.
   say "Checksum OK."
 fi
 chmod 0755 "$TMP/$NAME"

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 (unreleased)
+
+- `install.sh` gives up on a download that cannot connect within 15 seconds, or stays under 1 KB/s for 30 seconds, instead of waiting for a long time. GNU wget tries 3 times instead of 20.
+- `install.sh` shows a progress bar while it downloads the probe (with curl).
+- `install.sh` stops at once on Ctrl-C, SIGTERM or SIGHUP, a download under way included, and cleans up. Before, it carried on without its temporary files once the current command ended.
+
 ## 0.1.2 (2026-11-04)
 
 - `install.sh` asks for a token on an upgrade too: paste a new one to replace the old token, or press Enter to keep it. Changing the token no longer means editing the config by hand.
